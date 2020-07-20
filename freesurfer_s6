@@ -1,0 +1,49 @@
+#freesurfer code: subject # s6
+
+
+
+export FREESURFER_HOME=/usr/local/pkg/freesurfer/
+source $FREESURFER_HOME/SetUpFreeSurfer.sh
+export SUBJECTS_DIR=/home/xur1/Volumes/Coutanche/Shared/Caroline/run_study/freesurfer
+export SUBJECT_ID=s6
+cd $SUBJECTS_DIR
+mkdir $SUBJECT_ID
+cd $SUBJECT_ID
+mkdir mri 
+
+
+# [NOW PASTE THEIR ANATOMY (Filenames: 1_MPRAGE+orig.HEAD and 1_MPRAGE+orig.BRIK) INTO THE NEW FOLDER THAT SHOULD BE CREATED IN APPLICATIONS/FREESURFER/SUBJECTS]
+
+cp ~/Volumes/Coutanche/Shared/Caroline/run_study/structurals/6/1_MPRAGE+orig.{HEAD,BRIK} $SUBJECTS_DIR/$SUBJECT_ID/
+
+
+mri_convert $SUBJECTS_DIR/$SUBJECT_ID/1_MPRAGE+orig.BRIK $SUBJECTS_DIR/$SUBJECT_ID/mri/001.mgz
+
+recon-all -all -s $SUBJECT_ID
+
+# [THIS ^ CODE IS THE LINE THAT WILL TAKE HOURS TO RUN]
+
+cd $SUBJECTS_DIR/s6
+@SUMA_Make_Spec_FS -sid s6
+
+3dcopy 1_MPRAGE+orig SUMA/s6_MPRAGE+orig
+
+cd SUMA
+
+@SUMA_AlignToExperiment -exp_anat s6_MPRAGE+orig -surf_anat s6_SurfVol+orig -wd -align_centers -prefix s6_SurfVol_Alnd_Exp -surf_anat_followers brainmask.auto.nii aseg.auto.nii aseg.nii aparc.a2009s+aseg.nii aparc+aseg.nii
+
+3drename aparc.a2009s+aseg_Alnd_Exp+orig s6_FS_aparc.a2009s+aseg_Alnd_Exp
+3drename aparc+aseg_Alnd_Exp+orig s6_FS_aparc+aseg_Alnd_Exp
+3drename brainmask.auto_Alnd_Exp+orig.HEAD s6_FS_brainmask.auto_Alnd_Exp
+3drename aseg_Alnd_Exp+orig.HEAD s6_FS_aseg_Alnd_Exp
+3drename aseg.auto_Alnd_Exp+orig.HEAD s6_FS_aseg.auto_Alnd_Exp
+
+cd ..
+mris_convert -c ./surf/lh.sulc ./surf/lh.smoothwm lh.sulc.asc
+mris_convert -c ./surf/rh.sulc ./surf/rh.smoothwm rh.sulc.asc
+
+cd SUMA
+
+# [AFNI WILL RUN WHEN IT'S DONE:
+
+afni -niml & suma -spec s6_both.spec -sv s6_SurfVol_Alnd_Exp+orig
